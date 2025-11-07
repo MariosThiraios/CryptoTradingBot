@@ -1,12 +1,16 @@
+using CryptoTradingBot.Worker.Services;
+
 namespace CryptoTradingBot.Worker;
 
 public class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
+    private readonly BinanceService _binanceService;
 
-    public Worker(ILogger<Worker> logger)
+    public Worker(ILogger<Worker> logger, BinanceService binanceService)
     {
         _logger = logger;
+        _binanceService = binanceService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -15,18 +19,25 @@ public class Worker : BackgroundService
 
         try
         {
+            // Connect to Binance WebSocket
+            // You can change "BTCUSDT" to any symbol you want to track
+            var connected = await _binanceService.ConnectAsync("BTCUSDT");
+
+            if (!connected)
+            {
+                _logger.LogError("Failed to connect to Binance. Stopping worker.");
+                return;
+            }
+
+            // Alternative: Subscribe to multiple symbols
+            // var connected = await _binanceService.ConnectMultipleSymbolsAsync("BTCUSDT", "ETHUSDT", "BNBUSDT");
+
+            // Keep the service running and listening to WebSocket updates
             while (!stoppingToken.IsCancellationRequested)
             {
-                // This is where your trading bot logic will go
-                _logger.LogInformation("Bot is running at: {time}", DateTimeOffset.UtcNow);
-
-                // Example of different log levels:
-                _logger.LogDebug("Debug: Checking market conditions...");
-                _logger.LogInformation("Info: Price check completed");
-                // _logger.LogWarning("Warning: High volatility detected");
-                // _logger.LogError("Error: Failed to connect to exchange");
-
-                await Task.Delay(5000, stoppingToken); // Run every 5 seconds
+                // The price updates are received automatically via WebSocket
+                // This loop just keeps the service alive
+                await Task.Delay(60000, stoppingToken); // Check every minute if we should continue
             }
         }
         catch (OperationCanceledException)
@@ -36,10 +47,12 @@ public class Worker : BackgroundService
         catch (Exception ex)
         {
             _logger.LogError(ex, "An unexpected error occurred in the Trading Bot");
-            throw; // Re-throw to trigger service restart
+            throw;
         }
         finally
         {
+            // Disconnect from Binance when stopping
+            await _binanceService.DisconnectAsync();
             _logger.LogInformation("Trading Bot Worker stopped at: {time}", DateTimeOffset.Now);
         }
     }

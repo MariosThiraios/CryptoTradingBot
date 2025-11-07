@@ -1,4 +1,5 @@
 using CryptoTradingBot.Worker;
+using CryptoTradingBot.Worker.Services;
 using Serilog;
 
 // Configure Serilog
@@ -21,6 +22,9 @@ try
 
     // Add Serilog
     builder.Services.AddSerilog();
+
+    // Add Services
+    builder.Services.AddSingleton<BinanceService>();
 
     // Add the Worker Service
     builder.Services.AddHostedService<Worker>();
