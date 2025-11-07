@@ -1,7 +1,38 @@
 using CryptoTradingBot.Worker;
+using Serilog;
 
-var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<Worker>();
+// Configure Serilog
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .WriteTo.Console(
+        outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .WriteTo.File(
+        path: "logs/trading-bot-.log",
+        rollingInterval: RollingInterval.Day,
+        outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+        retainedFileCountLimit: 30)
+    .CreateLogger();
 
-var host = builder.Build();
-host.Run();
+try
+{
+    Log.Information("Starting CryptoTradingBot Worker Service");
+
+    var builder = Host.CreateApplicationBuilder(args);
+
+    // Add Serilog
+    builder.Services.AddSerilog();
+
+    // Add the Worker Service
+    builder.Services.AddHostedService<Worker>();
+
+    var host = builder.Build();
+    host.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

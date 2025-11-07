@@ -11,13 +11,36 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        while (!stoppingToken.IsCancellationRequested)
+        _logger.LogInformation("Trading Bot Worker started at: {time}", DateTimeOffset.Now);
+
+        try
         {
-            if (_logger.IsEnabled(LogLevel.Information))
+            while (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+                // This is where your trading bot logic will go
+                _logger.LogInformation("Bot is running at: {time}", DateTimeOffset.UtcNow);
+
+                // Example of different log levels:
+                _logger.LogDebug("Debug: Checking market conditions...");
+                _logger.LogInformation("Info: Price check completed");
+                // _logger.LogWarning("Warning: High volatility detected");
+                // _logger.LogError("Error: Failed to connect to exchange");
+
+                await Task.Delay(5000, stoppingToken); // Run every 5 seconds
             }
-            await Task.Delay(1000, stoppingToken);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("Trading Bot Worker is stopping gracefully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An unexpected error occurred in the Trading Bot");
+            throw; // Re-throw to trigger service restart
+        }
+        finally
+        {
+            _logger.LogInformation("Trading Bot Worker stopped at: {time}", DateTimeOffset.Now);
         }
     }
 }
