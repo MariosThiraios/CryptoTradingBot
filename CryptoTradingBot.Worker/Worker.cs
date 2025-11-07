@@ -20,17 +20,18 @@ public class Worker : BackgroundService
         try
         {
             // Connect to Binance WebSocket
-            // You can change "BTCUSDT" to any symbol you want to track
-            var connected = await _binanceService.ConnectAsync("BTCUSDT");
+
+            // Subscribe to a single symbol
+            //var connected = await _binanceService.ConnectAsync("BTCEUR");
+
+            // Subscribe to multiple symbols
+            var connected = await _binanceService.ConnectMultipleSymbolsAsync("BTCEUR", "ETHEUR", "BNBEUR");
 
             if (!connected)
             {
                 _logger.LogError("Failed to connect to Binance. Stopping worker.");
                 return;
             }
-
-            // Alternative: Subscribe to multiple symbols
-            // var connected = await _binanceService.ConnectMultipleSymbolsAsync("BTCUSDT", "ETHUSDT", "BNBUSDT");
 
             // Keep the service running and listening to WebSocket updates
             while (!stoppingToken.IsCancellationRequested)

@@ -1,8 +1,6 @@
 ﻿using Binance.Net.Clients;
 using Binance.Net.Interfaces;
-using Binance.Net.Objects.Models.Spot;
 using CryptoExchange.Net.Objects.Sockets;
-using CryptoExchange.Net.Sockets;
 
 namespace CryptoTradingBot.Worker.Services;
 
@@ -17,7 +15,7 @@ public class BinanceService
         _logger = logger;
     }
 
-    public async Task<bool> ConnectAsync(string symbol = "BTCUSDT")
+    public async Task<bool> ConnectAsync(string symbol)
     {
         try
         {
@@ -42,6 +40,41 @@ public class BinanceService
             else
             {
                 _logger.LogError("Failed to connect to Binance: {Error}", subscribeResult.Error?.Message);
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error connecting to Binance WebSocket");
+            return false;
+        }
+    }
+
+    // Additional method to subscribe to multiple symbols
+    public async Task<bool> ConnectMultipleSymbolsAsync(params string[] symbols)
+    {
+        try
+        {
+            _logger.LogInformation("Connecting to Binance WebSocket for multiple symbols: {Symbols}",
+                string.Join(", ", symbols));
+
+            _socketClient = new BinanceSocketClient();
+
+            var subscribeResult = await _socketClient.SpotApi.ExchangeData
+                .SubscribeToTickerUpdatesAsync(symbols, data =>
+                {
+                    OnPriceUpdate(data.Data);
+                });
+
+            if (subscribeResult.Success)
+            {
+                _subscription = subscribeResult.Data;
+                _logger.LogInformation("Successfully connected to Binance for multiple symbols");
+                return true;
+            }
+            else
+            {
+                _logger.LogError("Failed to connect: {Error}", subscribeResult.Error?.Message);
                 return false;
             }
         }
@@ -85,41 +118,6 @@ public class BinanceService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error disconnecting from Binance");
-        }
-    }
-
-    // Additional method to subscribe to multiple symbols
-    public async Task<bool> ConnectMultipleSymbolsAsync(params string[] symbols)
-    {
-        try
-        {
-            _logger.LogInformation("Connecting to Binance WebSocket for multiple symbols: {Symbols}",
-                string.Join(", ", symbols));
-
-            _socketClient = new BinanceSocketClient();
-
-            var subscribeResult = await _socketClient.SpotApi.ExchangeData
-                .SubscribeToTickerUpdatesAsync(symbols, data =>
-                {
-                    OnPriceUpdate(data.Data);
-                });
-
-            if (subscribeResult.Success)
-            {
-                _subscription = subscribeResult.Data;
-                _logger.LogInformation("Successfully connected to Binance for multiple symbols");
-                return true;
-            }
-            else
-            {
-                _logger.LogError("Failed to connect: {Error}", subscribeResult.Error?.Message);
-                return false;
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error connecting to Binance WebSocket");
-            return false;
         }
     }
 }
