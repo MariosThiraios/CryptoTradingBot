@@ -4,18 +4,20 @@ using CryptoExchange.Net.Objects.Sockets;
 
 namespace CryptoTradingBot.Worker.Services;
 
-public class BinanceService
+public class BinanceWebSocketService
 {
-    private readonly ILogger<BinanceService> _logger;
+    private readonly ILogger<BinanceWebSocketService> _logger;
+    private readonly PriceMonitor _priceMonitor;
     private BinanceSocketClient? _socketClient;
     private UpdateSubscription? _subscription;
 
-    public BinanceService(ILogger<BinanceService> logger)
+    public BinanceWebSocketService(ILogger<BinanceWebSocketService> logger, PriceMonitor priceMonitor)
     {
         _logger = logger;
+        _priceMonitor = priceMonitor;
     }
 
-    public async Task<bool> ConnectAsync(string symbol)
+    public async Task<bool> ConnectToSingleSymbolAsync(string symbol)
     {
         try
         {
@@ -28,7 +30,7 @@ public class BinanceService
             var subscribeResult = await _socketClient.SpotApi.ExchangeData
                 .SubscribeToTickerUpdatesAsync(symbol, data =>
                 {
-                    OnPriceUpdate(data.Data);
+                    OnTickerUpdate(data.Data);
                 });
 
             if (subscribeResult.Success)
@@ -51,7 +53,7 @@ public class BinanceService
     }
 
     // Additional method to subscribe to multiple symbols
-    public async Task<bool> ConnectMultipleSymbolsAsync(params string[] symbols)
+    public async Task<bool> ConnectToMultipleSymbolsAsync(params string[] symbols)
     {
         try
         {
@@ -63,7 +65,7 @@ public class BinanceService
             var subscribeResult = await _socketClient.SpotApi.ExchangeData
                 .SubscribeToTickerUpdatesAsync(symbols, data =>
                 {
-                    OnPriceUpdate(data.Data);
+                    OnTickerUpdate(data.Data);
                 });
 
             if (subscribeResult.Success)
@@ -85,7 +87,7 @@ public class BinanceService
         }
     }
 
-    private void OnPriceUpdate(IBinanceTick tickerData)
+    private void OnTickerUpdate(IBinanceTick tickerData)
     {
         // This method is called every time there's a price update
         _logger.LogInformation(
@@ -96,11 +98,7 @@ public class BinanceService
             tickerData.Volume.ToString("N2")
         );
 
-        // Here you can add your trading strategy logic
-        // For example:
-        // - Check if price crosses certain thresholds
-        // - Calculate indicators (RSI, MACD, etc.)
-        // - Trigger buy/sell signals
+        _priceMonitor.Evaluate24HourPriceChange(tickerData.Symbol, tickerData.PriceChangePercent);
     }
 
     public async Task DisconnectAsync()
