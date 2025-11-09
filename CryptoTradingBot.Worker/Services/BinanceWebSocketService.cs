@@ -10,6 +10,8 @@ public class BinanceWebSocketService
     private readonly PriceMonitor _priceMonitor;
     private BinanceSocketClient? _socketClient;
     private UpdateSubscription? _subscription;
+    private Dictionary<string, DateTime> _ignoredSymbols = new();
+    private readonly TimeSpan _ignoreExpiration = TimeSpan.FromSeconds(5);
 
     public BinanceWebSocketService(ILogger<BinanceWebSocketService> logger, PriceMonitor priceMonitor)
     {
@@ -89,7 +91,21 @@ public class BinanceWebSocketService
 
     private void OnTickerUpdate(IBinanceTick tickerData)
     {
-        // This method is called every time there's a price update
+        if (_ignoredSymbols.Count > 0)
+        {
+            var expiredSymbols = _ignoredSymbols.Where(kvp => DateTime.UtcNow - kvp.Value >= _ignoreExpiration).Select(kvp => kvp.Key).ToList();
+
+            foreach (var symbol in expiredSymbols)
+            {
+                _ignoredSymbols.Remove(symbol);
+            }
+
+            if (_ignoredSymbols.ContainsKey(tickerData.Symbol))
+            {
+                return;
+            }
+        }
+
         _logger.LogInformation(
             "Price Update - Symbol: {Symbol} | Price: {Price} | 24h Change: {Change}% | Volume: {Volume}",
             tickerData.Symbol,
@@ -98,7 +114,12 @@ public class BinanceWebSocketService
             tickerData.Volume.ToString("N2")
         );
 
-        _priceMonitor.Evaluate24HourPriceChange(tickerData.Symbol, tickerData.PriceChangePercent);
+        var symbolToIgnore = _priceMonitor.Evaluate24HourPriceChange(tickerData.Symbol, tickerData.PriceChangePercent);
+
+        if (symbolToIgnore != null)
+        {
+            _ignoredSymbols[symbolToIgnore] = DateTime.UtcNow;
+        }
     }
 
     public async Task DisconnectAsync()

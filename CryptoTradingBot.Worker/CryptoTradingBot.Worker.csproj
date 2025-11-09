@@ -8,6 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="logs\**" />
+    <Content Remove="logs\**" />
+    <EmbeddedResource Remove="logs\**" />
+    <None Remove="logs\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Binance.Net" Version="11.10.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />

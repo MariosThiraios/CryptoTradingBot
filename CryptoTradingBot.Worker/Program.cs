@@ -26,12 +26,7 @@ try
     // Add Services
     builder.Services.AddSingleton<PriceMonitor>();
     builder.Services.AddSingleton<BinanceWebSocketService>();
-
-    // Add TradeThrottler with 6 hours cooldown
-    builder.Services.AddSingleton<TradeThrottler>(sp =>
-        new TradeThrottler(
-            sp.GetRequiredService<ILogger<TradeThrottler>>(),
-            TimeSpan.FromHours(6)));
+    builder.Services.AddSingleton<BinanceAccountService>();
 
     // Add the Worker Service
     builder.Services.AddHostedService<Worker>();

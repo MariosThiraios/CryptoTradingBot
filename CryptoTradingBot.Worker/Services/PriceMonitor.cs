@@ -15,7 +15,7 @@ public class PriceMonitor
         _logger = logger;
     }
 
-    public void Evaluate24HourPriceChange(string symbol, decimal priceChangePercent)
+    public string? Evaluate24HourPriceChange(string symbol, decimal priceChangePercent)
     {
         if (priceChangePercent > _upThreshold)
         {
@@ -25,11 +25,12 @@ public class PriceMonitor
                Direction = TradeDirection.Sell
            };
 
-           PriceThresholdCrossed?.Invoke(this, @event);
-
            _logger.LogInformation("Price increase detected for {Symbol}: {PriceChangePercent}%. Triggering sell event.",
                symbol, priceChangePercent);
 
+           PriceThresholdCrossed?.Invoke(this, @event);
+
+            return symbol;
         }
         else if (priceChangePercent < _downThreshold)
         {
@@ -39,10 +40,16 @@ public class PriceMonitor
                 Direction = TradeDirection.Buy
             };
 
-            PriceThresholdCrossed?.Invoke(this, @event);
-
             _logger.LogInformation("Price decrease detected for {Symbol}: {PriceChangePercent}%. Triggering buy event.",
                 symbol, priceChangePercent);
+
+            PriceThresholdCrossed?.Invoke(this, @event);
+
+            return symbol;
+        }
+        else
+        {
+            return null;
         }
     }
 }
