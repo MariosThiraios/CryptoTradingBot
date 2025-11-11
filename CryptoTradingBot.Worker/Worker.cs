@@ -1,5 +1,7 @@
+using CryptoTradingBot.Worker.Configuration;
 using CryptoTradingBot.Worker.Models;
 using CryptoTradingBot.Worker.Services;
+using Microsoft.Extensions.Options;
 
 namespace CryptoTradingBot.Worker;
 
@@ -9,24 +11,25 @@ public class Worker : BackgroundService
     private readonly BinanceWebSocketService _binanceService;
     private readonly BinanceTradingService _tradingService;
     private readonly PriceMonitor _priceMonitor;
-    private readonly Dictionary<string, (string QuoteAsset, decimal MinQuoteAmount)> _symbolPairs = new()   
-    {
-        { "DCR", ("USDT", 5m) },
-        { "BTC", ("USDT", 5m) },
-        { "FIL", ("USDT", 5m) },
-        { "ICP", ("USDT", 5m) }
-    };
+    private readonly Dictionary<string, (string QuoteAsset, decimal MinQuoteAmount)> _symbolPairs;
 
     public Worker(
         ILogger<Worker> logger, 
         BinanceWebSocketService binanceService, 
         BinanceTradingService tradingService,
-        PriceMonitor priceMonitor)
+        PriceMonitor priceMonitor,
+        IOptions<TradingConfiguration> tradingConfig)
     {
         _logger = logger;
         _binanceService = binanceService;
         _tradingService = tradingService;
         _priceMonitor = priceMonitor;
+
+        // Load symbol pairs from configuration
+        _symbolPairs = tradingConfig.Value.SymbolPairs
+            .ToDictionary(
+                sp => sp.BaseAsset,
+                sp => (sp.QuoteAsset, sp.MinQuoteAmount));
 
         // Subscribe to the event
         _priceMonitor.PriceThresholdCrossed += OnPriceThresholdCrossed;

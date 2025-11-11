@@ -1,4 +1,5 @@
 using CryptoTradingBot.Worker;
+using CryptoTradingBot.Worker.Configuration;
 using CryptoTradingBot.Worker.Services;
 using Serilog;
 
@@ -22,6 +23,10 @@ try
 
     // Add Serilog
     builder.Services.AddSerilog();
+
+    // Configure options
+    builder.Services.Configure<TradingConfiguration>(
+        builder.Configuration.GetSection(TradingConfiguration.SectionName));
 
     // Add Services
     builder.Services.AddSingleton<PriceMonitor>();
