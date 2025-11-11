@@ -11,7 +11,7 @@ public class BinanceWebSocketService
     private BinanceSocketClient? _socketClient;
     private UpdateSubscription? _subscription;
     private Dictionary<string, DateTime> _ignoredSymbols = new();
-    private readonly TimeSpan _ignoreExpiration = TimeSpan.FromSeconds(5);
+    private readonly TimeSpan _ignoreExpiration = TimeSpan.FromHours(12);
 
     public BinanceWebSocketService(ILogger<BinanceWebSocketService> logger, PriceMonitor priceMonitor)
     {

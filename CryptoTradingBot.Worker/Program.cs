@@ -27,6 +27,7 @@ try
     builder.Services.AddSingleton<PriceMonitor>();
     builder.Services.AddSingleton<BinanceWebSocketService>();
     builder.Services.AddSingleton<BinanceAccountService>();
+    builder.Services.AddSingleton<BinanceTradingService>();
 
     // Add the Worker Service
     builder.Services.AddHostedService<Worker>();
