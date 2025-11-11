@@ -107,7 +107,7 @@ public class Worker : BackgroundService
             {
                 success = await _tradingService.ExecuteMarketOrderAsync(@event.Symbol, TradeDirection.Buy, quoteOrderQuantity: symbolConfig.Value.MinQuoteAmount);
             }
-            else if (@event.Direction == TradeDirection.Sell)
+            else
             {
                 success = await _tradingService.ExecuteMarketOrderAsync(@event.Symbol, TradeDirection.Sell, quoteOrderQuantity: symbolConfig.Value.MinQuoteAmount);
             }
