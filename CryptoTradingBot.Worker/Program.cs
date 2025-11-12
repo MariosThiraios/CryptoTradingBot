@@ -8,11 +8,13 @@ Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
     .WriteTo.Console(
         outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
-    .WriteTo.File(
-        path: "logs/trading-bot-.log",
-        rollingInterval: RollingInterval.Day,
-        outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] {Message:lj}{NewLine}{Exception}",
-        retainedFileCountLimit: 30)
+    .WriteTo.Logger(lc => lc
+        .Filter.ByExcluding(logEvent => logEvent.MessageTemplate.Text.StartsWith("Price Update - Symbol:"))
+        .WriteTo.File(
+            path: "logs/trading-bot-.log",
+            rollingInterval: RollingInterval.Day,
+            outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+            retainedFileCountLimit: 30))
     .CreateLogger();
 
 try
