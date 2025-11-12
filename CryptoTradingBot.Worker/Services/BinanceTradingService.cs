@@ -42,9 +42,7 @@ public class BinanceTradingService
             var orderSide = direction == TradeDirection.Buy ? OrderSide.Buy : OrderSide.Sell;
 
             // Place the market order
-            var orderResult = quantity.HasValue
-                ? await _restClient.SpotApi.Trading.PlaceOrderAsync(symbol: symbol, side: orderSide, type: SpotOrderType.Market, quantity: quantity.Value)
-                : await _restClient.SpotApi.Trading.PlaceOrderAsync(symbol: symbol, side: orderSide, type: SpotOrderType.Market, quoteQuantity: quoteOrderQuantity!.Value);
+            var orderResult = await _restClient.SpotApi.Trading.PlaceOrderAsync(symbol: symbol, side: orderSide, type: SpotOrderType.Market, quoteQuantity: quoteOrderQuantity!.Value);
 
             if (!orderResult.Success)
             {

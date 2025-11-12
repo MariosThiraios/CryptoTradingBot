@@ -4,6 +4,9 @@ public class TradingConfiguration
 {
     public const string SectionName = "Trading";
     
+    public decimal UpThreshold { get; set; } = 5.0m;
+    public decimal DownThreshold { get; set; } = -5.0m;
+    public int IgnoreExpirationHours { get; set; } = 6;
     public List<SymbolPairConfig> SymbolPairs { get; set; } = new();
 }
 

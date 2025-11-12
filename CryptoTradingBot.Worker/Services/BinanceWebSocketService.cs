@@ -1,6 +1,8 @@
 ﻿using Binance.Net.Clients;
 using Binance.Net.Interfaces;
 using CryptoExchange.Net.Objects.Sockets;
+using CryptoTradingBot.Worker.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace CryptoTradingBot.Worker.Services;
 
@@ -11,12 +13,13 @@ public class BinanceWebSocketService
     private BinanceSocketClient? _socketClient;
     private UpdateSubscription? _subscription;
     private Dictionary<string, DateTime> _ignoredSymbols = new();
-    private readonly TimeSpan _ignoreExpiration = TimeSpan.FromHours(12);
+    private readonly TimeSpan _ignoreExpiration;
 
-    public BinanceWebSocketService(ILogger<BinanceWebSocketService> logger, PriceMonitor priceMonitor)
+    public BinanceWebSocketService(ILogger<BinanceWebSocketService> logger, PriceMonitor priceMonitor, IOptions<TradingConfiguration> tradingConfig)
     {
         _logger = logger;
         _priceMonitor = priceMonitor;
+        _ignoreExpiration = TimeSpan.FromHours(tradingConfig.Value.IgnoreExpirationHours);
     }
 
     public async Task<bool> ConnectToSingleSymbolAsync(string symbol)

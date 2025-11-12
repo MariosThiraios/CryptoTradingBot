@@ -1,18 +1,22 @@
 ﻿using CryptoTradingBot.Worker.Models;
+using CryptoTradingBot.Worker.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace CryptoTradingBot.Worker.Services;
 
 public class PriceMonitor
 {
     private readonly ILogger<PriceMonitor> _logger;
-    private readonly decimal _upThreshold = 10.0m;
-    private readonly decimal _downThreshold = -10.0m;
+    private readonly decimal _upThreshold;
+    private readonly decimal _downThreshold;
 
     public event EventHandler<SymbolTradeEvent>? PriceThresholdCrossed;
 
-    public PriceMonitor(ILogger<PriceMonitor> logger)
+    public PriceMonitor(ILogger<PriceMonitor> logger, IOptions<TradingConfiguration> tradingConfig)
     {
         _logger = logger;
+        _upThreshold = tradingConfig.Value.UpThreshold;
+        _downThreshold = tradingConfig.Value.DownThreshold;
     }
 
     public string? Evaluate24HourPriceChange(string symbol, decimal priceChangePercent)
