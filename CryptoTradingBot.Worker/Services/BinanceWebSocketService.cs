@@ -71,7 +71,7 @@ public class BinanceWebSocketService
                 .SubscribeToTickerUpdatesAsync(symbols, data =>
                 {
                     OnTickerUpdate(data.Data);
-                });
+                }).ConfigureAwait(false);
 
             if (subscribeResult.Success)
             {
@@ -94,19 +94,15 @@ public class BinanceWebSocketService
 
     private void OnTickerUpdate(IBinanceTick tickerData)
     {
-        if (_ignoredSymbols.Count > 0)
+        // Check early exit first
+        if (_ignoredSymbols.TryGetValue(tickerData.Symbol, out var ignoredTime))
         {
-            var expiredSymbols = _ignoredSymbols.Where(kvp => DateTime.UtcNow - kvp.Value >= _ignoreExpiration).Select(kvp => kvp.Key).ToList();
-
-            foreach (var symbol in expiredSymbols)
-            {
-                _ignoredSymbols.Remove(symbol);
-            }
-
-            if (_ignoredSymbols.ContainsKey(tickerData.Symbol))
+            if (DateTime.UtcNow - ignoredTime < _ignoreExpiration)
             {
                 return;
             }
+            // Remove expired entry
+            _ignoredSymbols.Remove(tickerData.Symbol);
         }
 
         _logger.LogInformation(

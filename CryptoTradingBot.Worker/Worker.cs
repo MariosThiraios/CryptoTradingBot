@@ -12,6 +12,7 @@ public class Worker : BackgroundService
     private readonly BinanceTradingService _tradingService;
     private readonly PriceMonitor _priceMonitor;
     private readonly Dictionary<string, (string QuoteAsset, decimal MinQuoteAmount)> _symbolPairs;
+    private readonly Dictionary<string, (string BaseAsset, string QuoteAsset, decimal MinQuoteAmount)> _symbolLookup;
 
     public Worker(
         ILogger<Worker> logger, 
@@ -31,6 +32,12 @@ public class Worker : BackgroundService
                 sp => sp.BaseAsset,
                 sp => (sp.QuoteAsset, sp.MinQuoteAmount));
 
+        // Create a fast lookup dictionary: "BTCEUR" -> (BaseAsset: "BTC", QuoteAsset: "EUR", MinQuoteAmount: 10)
+        _symbolLookup = _symbolPairs.ToDictionary(
+            kvp => string.Concat(kvp.Key, kvp.Value.QuoteAsset),
+            kvp => (kvp.Key, kvp.Value.QuoteAsset, kvp.Value.MinQuoteAmount),
+            StringComparer.OrdinalIgnoreCase);
+
         // Subscribe to the event
         _priceMonitor.PriceThresholdCrossed += OnPriceThresholdCrossed;
     }
@@ -42,7 +49,7 @@ public class Worker : BackgroundService
         try
         {
             string[] symbols = _symbolPairs
-                .Select(kvp => kvp.Key + kvp.Value.QuoteAsset)
+                .Select(kvp => string.Concat(kvp.Key, kvp.Value.QuoteAsset))
                 .ToArray();
 
             // Connect to Binance WebSocket
@@ -93,27 +100,17 @@ public class Worker : BackgroundService
 
         try
         {
-            // Find the configuration for this symbol
-            var symbolConfig = _symbolPairs.FirstOrDefault(kvp => 
-                @event.Symbol.Equals(kvp.Key + kvp.Value.QuoteAsset, StringComparison.OrdinalIgnoreCase));
-
-            if (symbolConfig.Key == null)
+            // Fast O(1) lookup instead of O(n) LINQ scan
+            if (!_symbolLookup.TryGetValue(@event.Symbol, out var symbolConfig))
             {
                 _logger.LogWarning("Unknown symbol {Symbol}, not found in configured pairs", @event.Symbol);
                 return;
             }
 
             // Execute the market order based on direction
-            bool success = false;
-
-            if (@event.Direction == TradeDirection.Buy)
-            {
-                success = await _tradingService.ExecuteMarketOrderAsync(@event.Symbol, TradeDirection.Buy, quoteOrderQuantity: symbolConfig.Value.MinQuoteAmount);
-            }
-            else
-            {
-                success = await _tradingService.ExecuteMarketOrderAsync(@event.Symbol, TradeDirection.Sell, quoteOrderQuantity: symbolConfig.Value.MinQuoteAmount);
-            }
+            bool success = @event.Direction == TradeDirection.Buy
+                ? await _tradingService.ExecuteMarketOrderAsync(@event.Symbol, TradeDirection.Buy, quoteOrderQuantity: symbolConfig.MinQuoteAmount)
+                : await _tradingService.ExecuteMarketOrderAsync(@event.Symbol, TradeDirection.Sell, quoteOrderQuantity: symbolConfig.MinQuoteAmount);
 
             if (success)
             {
