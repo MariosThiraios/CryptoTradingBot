@@ -7,7 +7,7 @@ This README provides clear, step-by-step instructions for deploying, updating, a
 ## 🚀 Connect to Your Server
 If using an SSH key:
 ```bash
-ssh root@YOUR_DROPLET_IP
+ssh root@134.209.146.23
 ```
 
 ---
@@ -38,7 +38,7 @@ cd publish
 
 Upload the files:
 ```bash
-scp -r * root@YOUR_DROPLET_IP:/root/trading-bot/
+scp -r * root@134.209.146.23:/root/trading-bot/
 ```
 
 ---
@@ -88,23 +88,6 @@ Live logs:
 journalctl -u trading-bot.service -f
 ```
 
-Last 100 lines:
-```bash
-journalctl -u trading-bot.service -n 100
-```
-
-Logs since today:
-```bash
-journalctl -u trading-bot.service --since today
-```
-
-Log files (if your app writes them):
-```bash
-cd /root/trading-bot/logs
-ls -la
-cat trading-bot-*.log
-```
-
 ---
 
 ## 🧰 Managing the Bot
@@ -142,7 +125,7 @@ cd CryptoTradingBot.Worker
 
 dotnet publish -c Release -r linux-x64 --self-contained false -o ./publish
 cd publish
-scp -r * root@YOUR_DROPLET_IP:/root/trading-bot/
+scp -r * root@134.209.146.23:/root/trading-bot/
 ```
 
 ### On the server:
